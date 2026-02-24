@@ -149,13 +149,14 @@ def get_agents():
 # -------------------------------------------------------------------
 @app.route('/api/agents/built', methods=['GET'])
 def list_built_agents():
-    """Returns the list of compiled agent binaries in RAT_DIR/target/"""
+    """Returns all files in RAT_DIR/target/ that are regular files (compiled binaries)."""
     target_dir = os.path.join(RAT_DIR, 'target')
     agents = []
     if os.path.isdir(target_dir):
         for f in os.listdir(target_dir):
             fpath = os.path.join(target_dir, f)
-            if os.path.isfile(fpath) and 'agent' in f.lower():
+            # Include all plain files but exclude known non-binary Rust artifacts
+            if os.path.isfile(fpath) and not f.endswith(('.d', '.rlib', '.rmeta', '.pdb', '.lock')):
                 agents.append(f)
     return jsonify({"agents": sorted(agents)})
 
